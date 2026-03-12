@@ -46,12 +46,10 @@ body {
     100% { transform: translateX(-100%); }
 }
 
-.container {
-    display: flex;
+.main-content {
     max-width: 1600px;
     margin: 90px auto 0;
     padding: 20px;
-    gap: 20px;
     position: relative;
 }
 
@@ -75,10 +73,9 @@ body {
     gap: 15px; 
 }
 
-.main-content {
-    flex: 3;
-    margin-left: 220px; 
-    margin-right: 220px; 
+.content-center {
+    margin-left: 220px;
+    margin-right: 220px;
     max-width: 900px;
 }
 
@@ -103,6 +100,14 @@ body {
     font-size: 12px; 
     font-weight: bold;
     backdrop-filter: blur(5px);
+    overflow: hidden;
+}
+
+.ad-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
 }
 
 .ad-title {
@@ -143,6 +148,7 @@ body {
     border: 2px solid #fff;
     border-radius: 20px;
     box-shadow: 3px 3px 0 #000;
+    z-index: 2;
 }
 
 .hero {
@@ -399,6 +405,7 @@ body {
     border-radius: 50px;
     border: 4px solid #fff;
     white-space: nowrap;
+    z-index: 2;
 }
 
 .cta-button {
@@ -438,6 +445,10 @@ body {
     margin: 0 auto;
     font-size: 16px;
     line-height: 2;
+}
+
+.footer-content p {
+    margin: 5px 0;
 }
 
 .footer-content a {
@@ -490,21 +501,17 @@ body {
 }
 
 @media screen and (max-width: 1200px) {
-    .main-content {
-        margin-left: 200px;
-        margin-right: 200px;
-    }
-    
     .sidebar-left, .sidebar-right {
         width: 160px;
+    }
+    
+    .content-center {
+        margin-left: 200px;
+        margin-right: 200px;
     }
 }
 
 @media screen and (max-width: 992px) {
-    .container {
-        flex-direction: column;
-    }
-    
     .sidebar-left, .sidebar-right {
         position: static;
         width: 100%;
@@ -513,7 +520,7 @@ body {
         margin: 0;
     }
     
-    .main-content {
+    .content-center {
         margin: 20px 0;
     }
     
