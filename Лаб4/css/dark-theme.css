@@ -1,0 +1,223 @@
+.dark-theme {
+    --primary: #ff6b9d;
+    --secondary: #6bff9d;
+    --accent: #9d6bff;
+    --warning: #ffd966;
+    --dark: #ffffff;
+    --light: #1a1a1a;
+}
+
+.dark-theme body {
+    background: linear-gradient(45deg, #2d2d2d, #1a1a1a);
+    color: #f0f0f0;
+}
+
+.dark-theme .ticker {
+    background: linear-gradient(90deg, #8b0000, #b3470b, #b8860b);
+    color: #fff;
+    border-bottom: 4px solid #fff;
+}
+
+.dark-theme .ticker-content {
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+}
+
+.dark-theme .ad-card--fluorescent {
+    background: #006400 !important;
+    border-color: #ff6bff !important;
+    box-shadow: 10px 10px 0 #4b4bff, 15px 15px 0 #b30000 !important;
+    color: #fff;
+}
+
+.dark-theme .ad-card--neon {
+    background: #0a0a0a !important;
+    border-color: #0ff !important;
+    box-shadow: 0 0 20px #0ff, inset 0 0 10px #0ff !important;
+    color: #0ff !important;
+}
+
+.dark-theme .ad-card--minimal {
+    background: #333 !important;
+    border: 2px solid #666 !important;
+    box-shadow: 0 0 0 5px #444 !important;
+    color: #fff;
+}
+
+.dark-theme .ad-card--glitch {
+    background: #0a0a0a !important;
+    color: #0ff !important;
+}
+
+.dark-theme .ad-button {
+    background: #444;
+    color: #fff;
+    border: 2px solid #fff;
+    box-shadow: 3px 3px 0 #fff;
+}
+
+.dark-theme .ad-badge {
+    background: #b30000;
+    border: 2px solid #000;
+    box-shadow: 3px 3px 0 #fff;
+}
+
+.dark-theme .hero-title__line1 {
+    color: #ff6b6b;
+    text-shadow: 5px 5px 0 #6b6bff, 10px 10px 0 #6bff6b;
+}
+
+.dark-theme .hero-title__line2 {
+    color: #fff;
+    background: #8b8000;
+    border: 5px solid #fff;
+}
+
+.dark-theme .hero-image {
+    border: 10px solid #333;
+    box-shadow: 20px 20px 0 #fff, 40px 40px 0 #ff6bff;
+}
+
+.dark-theme .hero-slogan {
+    background: #fff;
+    color: #000;
+    border: 5px solid #8b8000;
+}
+
+.dark-theme .hero-slogan__text {
+    color: #8b8000;
+}
+
+.dark-theme .feature-card {
+    background: #333;
+    border: 4px solid #fff;
+    color: #fff;
+}
+
+.dark-theme .feature-card--1 { background: #b14b4b; }
+.dark-theme .feature-card--2 { background: #2d8b84; }
+.dark-theme .feature-card--3 { background: #b89e3d; }
+.dark-theme .feature-card--4 { background: #8f4bb1; }
+.dark-theme .feature-card--5 { background: #b86b13; }
+
+.dark-theme .feature-number {
+    background: #fff;
+    color: #000;
+    border: 5px solid #333;
+    box-shadow: 5px 5px 0 #fff;
+}
+
+.dark-theme .feature-card:hover {
+    box-shadow: 0 20px 0 #fff;
+}
+
+.dark-theme .section-title--skew {
+    background: #fff;
+    color: #000;
+    border-left: 20px solid #b30000;
+    border-right: 20px solid #4b4bff;
+}
+
+.dark-theme .section-title--bubble {
+    background: #006400;
+    color: #fff;
+    border: 8px dotted #ff6bff;
+}
+
+.dark-theme .testimonial-card {
+    background: #333;
+    border: 4px solid #fff;
+    color: #fff;
+}
+
+.dark-theme .testimonial-card:hover {
+    box-shadow: 15px 15px 0 #b30000;
+}
+
+.dark-theme .testimonial-avatar {
+    border: 5px solid #6b6bff;
+}
+
+.dark-theme .testimonial-author {
+    color: #ff6bff;
+}
+
+.dark-theme .testimonial-rating {
+    color: #ffd966;
+}
+
+.dark-theme .cta {
+    background: linear-gradient(135deg, #b14bb1, #2d8b8b);
+    border: 8px solid #fff;
+}
+
+.dark-theme .cta-counter {
+    background: #b30000;
+    color: #fff;
+    border: 4px solid #000;
+}
+
+.dark-theme .cta-button {
+    background: #fff;
+    border: 6px solid #333;
+    box-shadow: 0 20px 0 #fff;
+}
+
+.dark-theme .cta-button__text {
+    color: #000;
+}
+
+.dark-theme .cta-button:hover {
+    box-shadow: 0 15px 0 #fff;
+}
+
+.dark-theme .footer {
+    background: #fff;
+    color: #000;
+    border-top: 10px solid #b30000;
+}
+
+.dark-theme .footer-content a {
+    color: #8b8000;
+}
+
+.dark-theme .footer-counter {
+    background: #8b8000;
+    color: #fff;
+}
+
+.dark-theme .sticky-note {
+    background: #8b8000;
+    color: #fff;
+    border: 6px solid #fff;
+    box-shadow: 10px 10px 0 #6b6bff;
+}
+
+.dark-theme .ad-button--danger {
+    background: #b30000 !important;
+    color: #fff !important;
+}
+
+.dark-theme .ad-button--pulse {
+    animation: darkButtonPulse 0.5s infinite alternate;
+}
+
+@keyframes darkButtonPulse {
+    from { transform: scale(1); }
+    to { transform: scale(1.1); background: #b30000; color: #fff; }
+}
+
+.theme-toggle:hover {
+    transform: translateY(-3px);
+    box-shadow: 8px 8px 0 #000;
+}
+
+.dark-theme .theme-toggle {
+    background: #333;
+    color: #fff;
+    border: 4px solid #fff;
+    box-shadow: 5px 5px 0 #fff;
+}
+
+.dark-theme .theme-toggle:hover {
+    box-shadow: 8px 8px 0 #fff;
+}
