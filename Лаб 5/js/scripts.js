@@ -1,711 +1,610 @@
-class Card {
-    constructor(id, name, description, cost, rarity, effect, preset = true) {
-        this._id = id;
-        this.name = name;
-        this.description = description;
-        this.cost = cost;
-        this.rarity = rarity;
-        this.effect = effect;
-        this._preset = preset;
+(function() {
+    const STORAGE = "wow_collection";
+
+    class Unit {
+        #id;
+        #name;
+        #desc;
+        #cost;
+        #grade;
+        #text;
+        #isBase;
+
+        constructor(data, isBase = true) {
+            this.#id = data.id;
+            this.name = data.name;
+            this.desc = data.desc;
+            this.cost = data.cost;
+            this.grade = data.grade;
+            this.text = data.text;
+            this.#isBase = isBase;
+        }
+
+        get id() { return this.#id; }
+        get name() { return this.#name; }
+        get desc() { return this.#desc; }
+        get cost() { return this.#cost; }
+        get grade() { return this.#grade; }
+        get text() { return this.#text; }
+        get isBase() { return this.#isBase; }
+
+        set name(v) {
+            v = String(v).trim();
+            if (v.length < 2) throw new Error("Название слишком короткое");
+            this.#name = v;
+        }
+
+        set desc(v) {
+            v = String(v).trim();
+            if (v.length < 5) throw new Error("Описание слишком короткое");
+            this.#desc = v;
+        }
+
+        set cost(v) {
+            v = Number(v);
+            if (!Number.isInteger(v) || v < 0 || v > 20) throw new Error("Стоимость от 0 до 20");
+            this.#cost = v;
+        }
+
+        set grade(v) {
+            v = String(v).trim();
+            if (!v) throw new Error("Укажите редкость");
+            this.#grade = v;
+        }
+
+        set text(v) {
+            v = String(v).trim();
+            if (v.length < 5) throw new Error("Эффект слишком короткий");
+            this.#text = v;
+        }
+
+        getType() { return "Обычный юнит"; }
+        getClass() { return "normal"; }
+        getExtra() { return []; }
+
+        applyChanges(data) {
+            this.name = data.name;
+            this.desc = data.desc;
+            this.cost = data.cost;
+            this.grade = data.grade;
+            this.text = data.text;
+        }
+
+        toJSON() {
+            return {
+                type: this.constructor.name,
+                id: this.id,
+                name: this.name,
+                desc: this.desc,
+                cost: this.cost,
+                grade: this.grade,
+                text: this.text,
+                isBase: this.isBase
+            };
+        }
+
+        render(edit = false) {
+            const el = document.createElement("article");
+            el.className = `card ${this.getClass()}`;
+
+            el.innerHTML = `
+                <div class="card-head">
+                    <h3 class="card-name">${this.name}</h3>
+                    <span class="card-tag">${this.getType()}</span>
+                </div>
+                <div class="card-stats">
+                    <span class="card-stat">⚡ ${this.cost}</span>
+                    <span class="card-stat">⭐ ${this.grade}</span>
+                    ${this.getExtra().map(x => `<span class="card-stat">${x}</span>`).join("")}
+                </div>
+                <p class="card-desc">${this.desc}</p>
+                <p class="card-effect">✨ ${this.text}</p>
+                <div class="card-foot">
+                    <span class="card-source">${this.isBase ? "Базовая" : "Своя"}</span>
+                    <div class="card-btns"></div>
+                </div>
+            `;
+
+            const btns = el.querySelector(".card-btns");
+
+            if (!this.isBase) {
+                const del = document.createElement("button");
+                del.className = "btn danger";
+                del.textContent = "Удалить";
+                del.onclick = () => removeCard(this.id);
+                btns.append(del);
+            }
+
+            if (edit && this.isBase) {
+                el.append(createEditForm(this));
+            }
+
+            return el;
+        }
     }
 
-    get id() { return this._id; }
-    get name() { return this._name; }   
-    get description() { return this._description; }
-    get cost() { return this._cost; }
-    get rarity() { return this._rarity; }
-    get effect() { return this._effect; }
-    get preset() { return this._preset; }
+    class Berserker extends Unit {
+        constructor(data, isBase = true) {
+            super(data, isBase);
+            this.attack = data.attack;
+            this.weapon = data.weapon;
+        }
 
-    set name(value) {
-        value = String(value).trim();
-        if (value.length < 2) throw new Error("Название слишком короткое.");
-        this._name = value;
+        get attack() { return this._attack; }
+        get weapon() { return this._weapon; }
+
+        set attack(v) {
+            v = Number(v);
+            if (!Number.isInteger(v) || v < 1 || v > 99) throw new Error("Атака от 1 до 99");
+            this._attack = v;
+        }
+
+        set weapon(v) {
+            v = String(v).trim();
+            if (!v) throw new Error("Укажите оружие");
+            this._weapon = v;
+        }
+
+        getType() { return "Берсерк"; }
+        getClass() { return "berserk"; }
+        getExtra() { return [`🗡️ ${this.attack}`, `⚔️ ${this.weapon}`]; }
+
+        applyChanges(data) {
+            super.applyChanges(data);
+            this.attack = data.attack;
+            this.weapon = data.weapon;
+        }
+
+        toJSON() {
+            return { ...super.toJSON(), attack: this.attack, weapon: this.weapon };
+        }
     }
 
-    set description(value) {
-        value = String(value).trim();
-        if (value.length < 5) throw new Error("Описание слишком короткое.");
-        this._description = value;
+    class Guardian extends Unit {
+        constructor(data, isBase = true) {
+            super(data, isBase);
+            this.armor = data.armor;
+            this.bless = data.bless;
+        }
+
+        get armor() { return this._armor; }
+        get bless() { return this._bless; }
+
+        set armor(v) {
+            v = Number(v);
+            if (!Number.isInteger(v) || v < 1 || v > 99) throw new Error("Защита от 1 до 99");
+            this._armor = v;
+        }
+
+        set bless(v) {
+            v = String(v).trim();
+            if (!v) throw new Error("Укажите благословение");
+            this._bless = v;
+        }
+
+        getType() { return "Страж"; }
+        getClass() { return "guard"; }
+        getExtra() { return [`🛡️ ${this.armor}`, `✨ ${this.bless}`]; }
+
+        applyChanges(data) {
+            super.applyChanges(data);
+            this.armor = data.armor;
+            this.bless = data.bless;
+        }
+
+        toJSON() {
+            return { ...super.toJSON(), armor: this.armor, bless: this.bless };
+        }
     }
 
-    set cost(value) {
-        value = Number(value);
-        if (!Number.isInteger(value) || value < 0 || value > 20) throw new Error("Стоимость от 0 до 20.");
-        this._cost = value;
+    class DarkMage extends Unit {
+        constructor(data, isBase = true) {
+            super(data, isBase);
+            this.souls = data.souls;
+            this.ritual = data.ritual;
+        }
+
+        get souls() { return this._souls; }
+        get ritual() { return this._ritual; }
+
+        set souls(v) {
+            v = Number(v);
+            if (!Number.isInteger(v) || v < 1 || v > 99) throw new Error("Души от 1 до 99");
+            this._souls = v;
+        }
+
+        set ritual(v) {
+            v = String(v).trim();
+            if (!v) throw new Error("Укажите ритуал");
+            this._ritual = v;
+        }
+
+        getType() { return "Некромант"; }
+        getClass() { return "dark"; }
+        getExtra() { return [`💀 ${this.souls}`, `📜 ${this.ritual}`]; }
+
+        applyChanges(data) {
+            super.applyChanges(data);
+            this.souls = data.souls;
+            this.ritual = data.ritual;
+        }
+
+        toJSON() {
+            return { ...super.toJSON(), souls: this.souls, ritual: this.ritual };
+        }
     }
 
-    set rarity(value) {
-        value = String(value).trim();
-        if (!value) throw new Error("Укажите редкость.");
-        this._rarity = value;
+    const presetList = [
+        new Berserker({ id: "base_1", name: "Гаррош", desc: "Вождь Орды", cost: 5, grade: "Легендарная", text: "Рывок: 5 урона", attack: 8, weapon: "Горечь" }, true),
+        new Guardian({ id: "base_2", name: "Утер", desc: "Верховный лорд", cost: 6, grade: "Легендарная", text: "Божественный щит", armor: 7, bless: "Свет" }, true),
+        new DarkMage({ id: "base_3", name: "Король Лич", desc: "Повелитель Нордскола", cost: 7, grade: "Легендарная", text: "Призыв армии", souls: 9, ritual: "Ледяная скорбь" }, true)
+    ];
+
+    let appState = {
+        editMode: false,
+        base: [],
+        custom: []
+    };
+
+    function saveToStorage() {
+        localStorage.setItem(STORAGE, JSON.stringify({
+            editMode: appState.editMode,
+            base: appState.base.map(c => c.toJSON()),
+            custom: appState.custom.map(c => c.toJSON())
+        }));
     }
 
-    set effect(value) {
-        value = String(value).trim();
-        if (value.length < 5) throw new Error("Эффект слишком короткий.");
-        this._effect = value;
+    function loadFromStorage() {
+        const raw = localStorage.getItem(STORAGE);
+        if (!raw) {
+            appState.base = [...presetList];
+            appState.custom = [];
+            saveToStorage();
+            return;
+        }
+
+        try {
+            const data = JSON.parse(raw);
+            appState.editMode = !!data.editMode;
+            appState.base = (data.base || []).map(restoreCard);
+            appState.custom = (data.custom || []).map(restoreCard);
+        } catch {
+            appState.base = [...presetList];
+            appState.custom = [];
+        }
     }
 
-    getType() {
-        return "Обычная карта";
+    function restoreCard(data) {
+        if (data.type === "Berserker") {
+            return new Berserker(data, data.isBase);
+        }
+        if (data.type === "Guardian") {
+            return new Guardian(data, data.isBase);
+        }
+        return new DarkMage(data, data.isBase);
     }
 
-    getClassName() {
-        return "custom";
+    function renderApp() {
+        document.body.innerHTML = "";
+        document.body.append(buildHeader(), buildMain());
     }
 
-    getExtra() {
-        return [];
-    }
-
-    update(data) {
-        this.name = data.name;
-        this.description = data.description;
-        this.cost = data.cost;
-        this.rarity = data.rarity;
-        this.effect = data.effect;
-    }
-
-    toJSON() {
-        return {
-            classType: this.constructor.name,
-            id: this.id,
-            name: this.name,
-            description: this.description,
-            cost: this.cost,
-            rarity: this.rarity,
-            effect: this.effect,
-            preset: this.preset
-        };
-    }
-
-    render(editMode = false) {
-        const article = document.createElement("article");
-        article.className = `card-item ${this.getClassName()}`;
-
-        article.innerHTML = `
-            <div class="card-top">
-                <h3 class="card-title">${this.name}</h3>
-                <span class="card-badge">${this.getType()}</span>
-            </div>
-            <div class="card-meta">
-                <span class="card-stat">Мана: ${this.cost}</span>
-                <span class="card-stat">Редкость: ${this.rarity}</span>
-                ${this.getExtra().map(item => `<span class="card-stat">${item}</span>`).join("")}
-            </div>
-            <p class="card-description">${this.description}</p>
-            <p class="card-effect">${this.effect}</p>
-            <div class="card-footer">
-                <span class="card-origin">${this.preset ? "Базовая карта" : "Пользовательская карта"}</span>
-                <div class="card-actions"></div>
+    function buildHeader() {
+        const header = document.createElement("header");
+        header.className = "top-bar";
+        header.innerHTML = `
+            <div class="top-inner">
+                <div>
+                    <h1>WoW Коллекция</h1>
+                    <p>Карточная коллекция по мотивам Hearthstone</p>
+                </div>
+                <div class="top-actions"></div>
             </div>
         `;
 
-        const actions = article.querySelector(".card-actions");
+        const actions = header.querySelector(".top-actions");
+        const editBtn = createButton(
+            appState.editMode ? "Выкл. редакт" : "Вкл. редакт",
+            appState.editMode ? "btn danger" : "btn primary",
+            () => {
+                appState.editMode = !appState.editMode;
+                saveToStorage();
+                renderApp();
+            }
+        );
+        const resetBtn = createButton("Сброс", "btn secondary", () => {
+            if (confirm("Сбросить всё?")) {
+                localStorage.removeItem(STORAGE);
+                appState = { editMode: false, base: [...presetList], custom: [] };
+                saveToStorage();
+                renderApp();
+            }
+        });
 
-        if (!this.preset) {
-            const del = document.createElement("button");
-            del.className = "button danger";
-            del.type = "button";
-            del.textContent = "Удалить";
-            del.onclick = () => deleteCustomCard(this.id);
-            actions.append(del);
-        }
-
-        if (editMode && this.preset) {
-            article.append(createEditPanel(this));
-        }
-
-        return article;
-    }
-}
-
-class WarriorCard extends Card {
-    constructor(id, name, description, cost, rarity, effect, attack, weapon, preset = true) {
-        super(id, name, description, cost, rarity, effect, preset);
-        this.attack = attack;
-        this.weapon = weapon;
+        actions.append(editBtn, resetBtn);
+        return header;
     }
 
-    get attack() { return this._attack; }
-    get weapon() { return this._weapon; }
-
-    set attack(value) {
-        value = Number(value);
-        if (!Number.isInteger(value) || value < 1 || value > 99) throw new Error("Атака от 1 до 99.");
-        this._attack = value;
+    function buildMain() {
+        const main = document.createElement("main");
+        main.className = "main-wrap";
+        main.append(buildHero(), buildContent());
+        return main;
     }
 
-    set weapon(value) {
-        value = String(value).trim();
-        if (!value) throw new Error("Укажите оружие.");
-        this._weapon = value;
-    }
-
-    getType() { return "Воин"; }
-    getClassName() { return "warrior"; }
-    getExtra() { return [`Атака: ${this.attack}`, `Оружие: ${this.weapon}`]; }
-
-    update(data) {
-        super.update(data);
-        this.attack = data.attack;
-        this.weapon = data.weapon;
-    }
-
-    toJSON() {
-        return { ...super.toJSON(), attack: this.attack, weapon: this.weapon };
-    }
-}
-
-class PaladinCard extends Card {
-    constructor(id, name, description, cost, rarity, effect, defense, blessing, preset = true) {
-        super(id, name, description, cost, rarity, effect, preset);
-        this.defense = defense;
-        this.blessing = blessing;
-    }
-
-    get defense() { return this._defense; }
-    get blessing() { return this._blessing; }
-
-    set defense(value) {
-        value = Number(value);
-        if (!Number.isInteger(value) || value < 1 || value > 99) throw new Error("Защита от 1 до 99.");
-        this._defense = value;
-    }
-
-    set blessing(value) {
-        value = String(value).trim();
-        if (!value) throw new Error("Укажите благословение.");
-        this._blessing = value;
-    }
-
-    getType() { return "Паладин"; }
-    getClassName() { return "paladin"; }
-    getExtra() { return [`Защита: ${this.defense}`, `Благословение: ${this.blessing}`]; }
-
-    update(data) {
-        super.update(data);
-        this.defense = data.defense;
-        this.blessing = data.blessing;
-    }
-
-    toJSON() {
-        return { ...super.toJSON(), defense: this.defense, blessing: this.blessing };
-    }
-}
-
-class NecromancerCard extends Card {
-    constructor(id, name, description, cost, rarity, effect, souls, ritual, preset = true) {
-        super(id, name, description, cost, rarity, effect, preset);
-        this.souls = souls;
-        this.ritual = ritual;
-    }
-
-    get souls() { return this._souls; }
-    get ritual() { return this._ritual; }
-
-    set souls(value) {
-        value = Number(value);
-        if (!Number.isInteger(value) || value < 1 || value > 99) throw new Error("Души от 1 до 99.");
-        this._souls = value;
-    }
-
-    set ritual(value) {
-        value = String(value).trim();
-        if (!value) throw new Error("Укажите ритуал.");
-        this._ritual = value;
-    }
-
-    getType() { return "Некромант"; }
-    getClassName() { return "necromancer"; }
-    getExtra() { return [`Души: ${this.souls}`, `Ритуал: ${this.ritual}`]; }
-
-    update(data) {
-        super.update(data);
-        this.souls = data.souls;
-        this.ritual = data.ritual;
-    }
-
-    toJSON() {
-        return { ...super.toJSON(), souls: this.souls, ritual: this.ritual };
-    }
-}
-
-const STORAGE_KEY = "wow_cards";
-
-const baseCards = [
-    new WarriorCard(
-        "preset-1",
-        "Гаррош Адский Крик",
-        "Вождь Орды, могучий воин, не знающий пощады.",
-        5,
-        "Легендарная",
-        "Рывок: наносит 5 урона случайному врагу. Если враг убит, получает +2 к атаке.",
-        8,
-        "Горечь"
-    ),
-    new PaladinCard(
-        "preset-2",
-        "Утер Светоносный",
-        "Верховный лорд Серебряного Авангарда, защитник Альянса.",
-        6,
-        "Легендарная",
-        "Божественный щит: все союзники получают невосприимчивость к урону на 1 ход.",
-        7,
-        "Свет"
-    ),
-    new NecromancerCard(
-        "preset-3",
-        "Король Лич",
-        "Повелитель Нордскола, властелин Плети.",
-        7,
-        "Легендарная",
-        "Призыв армии мертвых: создаёт 3 скелетов на вашу сторону.",
-        9,
-        "Ледяная скорбь"
-    )
-];
-
-let state = {
-    editMode: false,
-    presetCards: [],
-    customCards: []
-};
-
-document.addEventListener("DOMContentLoaded", init);
-
-function init() {
-    loadState();
-    buildPage();
-}
-
-function loadState() {
-    const raw = localStorage.getItem(STORAGE_KEY);
-
-    if (!raw) {
-        state = {
-            editMode: false,
-            presetCards: cloneCards(baseCards),
-            customCards: []
-        };
-        saveState();
-        return;
-    }
-
-    try {
-        const saved = JSON.parse(raw);
-        state.editMode = !!saved.editMode;
-        state.presetCards = restoreCards(saved.presetCards, baseCards);
-        state.customCards = restoreCards(saved.customCards, []);
-    } catch {
-        state = {
-            editMode: false,
-            presetCards: cloneCards(baseCards),
-            customCards: []
-        };
-    }
-}
-
-function saveState() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        editMode: state.editMode,
-        presetCards: state.presetCards.map(card => card.toJSON()),
-        customCards: state.customCards.map(card => card.toJSON())
-    }));
-}
-
-function cloneCards(cards) {
-    return cards.map(card => createCard(card.toJSON()));
-}
-
-function restoreCards(saved, fallback) {
-    if (!Array.isArray(saved) || saved.length === 0) return cloneCards(fallback);
-    return saved.map(createCard);
-}
-
-function createCard(data) {
-    if (data.classType === "WarriorCard") {
-        return new WarriorCard(data.id, data.name, data.description, data.cost, data.rarity, data.effect, data.attack, data.weapon, data.preset);
-    }
-    if (data.classType === "PaladinCard") {
-        return new PaladinCard(data.id, data.name, data.description, data.cost, data.rarity, data.effect, data.defense, data.blessing, data.preset);
-    }
-    return new NecromancerCard(data.id, data.name, data.description, data.cost, data.rarity, data.effect, data.souls, data.ritual, data.preset);
-}
-
-function buildPage() {
-    document.body.innerHTML = "";
-    document.body.append(buildHeader(), buildMain());
-}
-
-function buildHeader() {
-    const header = document.createElement("header");
-    header.className = "site-header";
-
-    header.innerHTML = `
-        <div class="header-inner">
-            <div class="brand">
-                <h1>Коллекция карт WoW</h1>
-                <p>Управление коллекцией карт по мотивам Hearthstone</p>
+    function buildHero() {
+        const sec = document.createElement("section");
+        sec.className = "hero";
+        sec.innerHTML = `
+            <h2>Добро пожаловать в Азерот</h2>
+            <p>Собирай, создавай, редактируй</p>
+            <div class="hero-grid">
+                <article><h3>Берсерк</h3><p>Атака + оружие</p></article>
+                <article><h3>Страж</h3><p>Защита + благословение</p></article>
+                <article><h3>Некромант</h3><p>Души + ритуал</p></article>
             </div>
-            <div class="header-actions"></div>
-        </div>
-    `;
-
-    const actions = header.querySelector(".header-actions");
-
-    const editBtn = button(
-        state.editMode ? "Выключить редактирование" : "Включить редактирование",
-        state.editMode ? "button danger" : "button primary",
-        toggleEditMode
-    );
-
-    const resetBtn = button("Сбросить изменения", "button secondary", resetAll);
-
-    actions.append(editBtn, resetBtn);
-    return header;
-}
-
-function buildMain() {
-    const main = document.createElement("main");
-    main.className = "page-wrapper";
-    main.append(buildHero(), buildContent());
-    return main;
-}
-
-function buildHero() {
-    const section = document.createElement("section");
-    section.className = "hero";
-    section.innerHTML = `
-        <h2>Добро пожаловать в Азерот!</h2>
-        <p>Коллекционируй легендарных героев, создавай свои карты и сражайся!</p>
-        <div class="info-grid">
-            <article class="info-card">
-                <h3>Воин</h3>
-                <p>Атакующие карты с мощным оружием</p>
-            </article>
-            <article class="info-card">
-                <h3>Паладин</h3>
-                <p>Защитные карты с благословениями</p>
-            </article>
-            <article class="info-card">
-                <h3>Некромант</h3>
-                <p>Карты с душами и ритуалами</p>
-            </article>
-        </div>
-    `;
-    return section;
-}
-
-function buildContent() {
-    const wrapper = document.createElement("div");
-    wrapper.className = "content-grid";
-    wrapper.append(buildSidebar(), buildDeck());
-    return wrapper;
-}
-
-function buildSidebar() {
-    const aside = document.createElement("aside");
-    aside.className = "sidebar";
-
-    const section = document.createElement("section");
-    section.innerHTML = `<h2>Добавить карту</h2>`;
-
-    const form = document.createElement("form");
-    form.id = "add-card-form";
-    form.append(
-        field("new-name", "Название карты"),
-        textareaField("new-description", "Описание карты"),
-        numberField("new-cost", "Стоимость маны", 0, 20),
-        field("new-rarity", "Редкость"),
-        textareaField("new-effect", "Эффект карты"),
-        selectField("new-type", "Класс карты", [
-            ["WarriorCard", "Воин"],
-            ["PaladinCard", "Паладин"],
-            ["NecromancerCard", "Некромант"]
-        ]),
-        numberField("new-a", "Атака / Защита / Души", 1, 99),
-        field("new-b", "Оружие / Благословение / Ритуал"),
-        button("Создать карту", "button success", null, "submit"),
-        messageBlock("add-card-message")
-    );
-
-    form.addEventListener("submit", addCard);
-    section.append(form);
-    aside.append(section);
-
-    return aside;
-}
-
-function buildDeck() {
-    const area = document.createElement("div");
-    area.className = "deck-area";
-    area.append(buildPresetSection(), buildCustomSection());
-    return area;
-}
-
-function buildPresetSection() {
-    const section = document.createElement("section");
-    section.className = "section-block";
-
-    const title = document.createElement("h2");
-    title.textContent = "Легендарные герои";
-
-    const text = document.createElement("p");
-    text.textContent = "Знаменитые персонажи World of Warcraft, доступные для редактирования.";
-
-    const grid = document.createElement("div");
-    grid.className = "cards-grid";
-
-    state.presetCards.forEach(card => grid.append(card.render(state.editMode)));
-
-    section.append(title, text, grid);
-    return section;
-}
-
-function buildCustomSection() {
-    const section = document.createElement("section");
-    section.className = "section-block";
-
-    const title = document.createElement("h2");
-    title.textContent = "Пользовательские карты";
-
-    const text = document.createElement("p");
-    text.textContent = "Карты, созданные тобой.";
-
-    section.append(title, text);
-
-    if (!state.customCards.length) {
-        const empty = document.createElement("p");
-        empty.className = "empty-state";
-        empty.textContent = "Пока пользовательских карт нет. Создай свою карту!";
-        section.append(empty);
-        return section;
+        `;
+        return sec;
     }
 
-    const grid = document.createElement("div");
-    grid.className = "cards-grid";
-    state.customCards.forEach(card => grid.append(card.render(false)));
-    section.append(grid);
+    function buildContent() {
+        const wrapper = document.createElement("div");
+        wrapper.className = "content-layout";
+        wrapper.append(buildForm(), buildDeck());
+        return wrapper;
+    }
 
-    return section;
-}
+    function buildForm() {
+        const aside = document.createElement("aside");
+        aside.className = "form-panel";
+        aside.innerHTML = `<h2>Добавить карту</h2>`;
 
-function addCard(event) {
-    event.preventDefault();
-    const form = event.currentTarget;
-    const msg = form.querySelector("#add-card-message");
-    clearMessage(msg);
+        const form = document.createElement("form");
+        form.id = "addForm";
+        form.append(
+            inputField("new_name", "Название"),
+            textareaField("new_desc", "Описание"),
+            numberField("new_cost", "Мана", 0, 20),
+            inputField("new_grade", "Редкость"),
+            textareaField("new_text", "Эффект"),
+            selectField("new_class", "Класс", [
+                ["Berserker", "Берсерк"],
+                ["Guardian", "Страж"],
+                ["DarkMage", "Некромант"]
+            ]),
+            numberField("new_a", "Атака / Защита / Души", 1, 99),
+            inputField("new_b", "Оружие / Благословение / Ритуал"),
+            createButton("Создать", "btn success", null, "submit"),
+            messageBlock("formMsg")
+        );
 
-    try {
-        const type = form.querySelector("#new-type").value;
-        const id = "custom-" + Date.now();
-        const data = {
-            id,
-            name: form.querySelector("#new-name").value,
-            description: form.querySelector("#new-description").value,
-            cost: form.querySelector("#new-cost").value,
-            rarity: form.querySelector("#new-rarity").value,
-            effect: form.querySelector("#new-effect").value,
-            a: form.querySelector("#new-a").value,
-            b: form.querySelector("#new-b").value
-        };
+        form.addEventListener("submit", addCard);
+        aside.append(form);
+        return aside;
+    }
 
-        let card;
+    function buildDeck() {
+        const area = document.createElement("div");
+        area.className = "deck-area";
 
-        if (type === "WarriorCard") {
-            card = new WarriorCard(id, data.name, data.description, data.cost, data.rarity, data.effect, data.a, data.b, false);
-        } else if (type === "PaladinCard") {
-            card = new PaladinCard(id, data.name, data.description, data.cost, data.rarity, data.effect, data.a, data.b, false);
+        const baseSec = document.createElement("section");
+        baseSec.className = "block";
+        baseSec.innerHTML = `<h2>Легендарные герои</h2><p>Предустановленные карты</p><div class="card-grid"></div>`;
+        const baseGrid = baseSec.querySelector(".card-grid");
+        appState.base.forEach(c => baseGrid.append(c.render(appState.editMode)));
+
+        const customSec = document.createElement("section");
+        customSec.className = "block";
+        customSec.innerHTML = `<h2>Мои карты</h2><p>Созданные тобой</p><div class="card-grid"></div>`;
+        const customGrid = customSec.querySelector(".card-grid");
+
+        if (appState.custom.length === 0) {
+            customGrid.innerHTML = '<p class="empty">Пока пусто. Создай первую карту!</p>';
         } else {
-            card = new NecromancerCard(id, data.name, data.description, data.cost, data.rarity, data.effect, data.a, data.b, false);
+            appState.custom.forEach(c => customGrid.append(c.render(false)));
         }
 
-        state.customCards.unshift(card);
-        saveState();
-        buildPage();
-    } catch (error) {
-        showMessage(msg, error.message, true);
+        area.append(baseSec, customSec);
+        return area;
     }
-}
 
-function deleteCustomCard(id) {
-    if (!confirm("Удалить карту?")) return;
-    state.customCards = state.customCards.filter(card => card.id !== id);
-    saveState();
-    buildPage();
-}
+    function addCard(e) {
+        e.preventDefault();
+        const form = e.currentTarget;
+        const msg = document.getElementById("formMsg");
+        clearMsg(msg);
 
-function toggleEditMode() {
-    state.editMode = !state.editMode;
-    saveState();
-    buildPage();
-}
+        try {
+            const type = form.querySelector("#new_class").value;
+            const id = "user_" + Date.now();
+            const data = {
+                id,
+                name: form.querySelector("#new_name").value,
+                desc: form.querySelector("#new_desc").value,
+                cost: form.querySelector("#new_cost").value,
+                grade: form.querySelector("#new_grade").value,
+                text: form.querySelector("#new_text").value,
+                a: form.querySelector("#new_a").value,
+                b: form.querySelector("#new_b").value
+            };
 
-function resetAll() {
-    if (!confirm("Сбросить все изменения?")) return;
-    localStorage.removeItem(STORAGE_KEY);
-    state = { editMode: false, presetCards: cloneCards(baseCards), customCards: [] };
-    saveState();
-    buildPage();
-}
+            let card;
+            if (type === "Berserker") {
+                card = new Berserker({ id: data.id, name: data.name, desc: data.desc, cost: data.cost, grade: data.grade, text: data.text, attack: data.a, weapon: data.b }, false);
+            } else if (type === "Guardian") {
+                card = new Guardian({ id: data.id, name: data.name, desc: data.desc, cost: data.cost, grade: data.grade, text: data.text, armor: data.a, bless: data.b }, false);
+            } else {
+                card = new DarkMage({ id: data.id, name: data.name, desc: data.desc, cost: data.cost, grade: data.grade, text: data.text, souls: data.a, ritual: data.b }, false);
+            }
 
-function createEditPanel(card) {
-    const section = document.createElement("section");
-    section.className = "edit-panel";
-
-    const title = document.createElement("h4");
-    title.textContent = "Редактирование карты";
-
-    const form = document.createElement("form");
-    form.append(
-        field(`edit-name-${card.id}`, "Название карты", card.name, true),
-        textareaField(`edit-description-${card.id}`, "Описание карты", card.description, true),
-        numberField(`edit-cost-${card.id}`, "Стоимость маны", 0, 20, card.cost, true),
-        field(`edit-rarity-${card.id}`, "Редкость", card.rarity, true),
-        textareaField(`edit-effect-${card.id}`, "Эффект карты", card.effect, true),
-        ...extraFields(card),
-        button("Сохранить изменения", "button primary", null, "submit"),
-        messageBlock(`msg-${card.id}`)
-    );
-
-    form.addEventListener("submit", (event) => saveEdit(event, card));
-    section.append(title, form);
-    return section;
-}
-
-function saveEdit(event, card) {
-    event.preventDefault();
-    const form = event.currentTarget;
-    const msg = form.querySelector(".form-message");
-    clearMessage(msg);
-
-    try {
-        const base = {
-            name: form.querySelector(`#edit-name-${card.id}`).value,
-            description: form.querySelector(`#edit-description-${card.id}`).value,
-            cost: form.querySelector(`#edit-cost-${card.id}`).value,
-            rarity: form.querySelector(`#edit-rarity-${card.id}`).value,
-            effect: form.querySelector(`#edit-effect-${card.id}`).value
-        };
-
-        if (card instanceof WarriorCard) {
-            card.update({
-                ...base,
-                attack: form.querySelector(`#extra-a-${card.id}`).value,
-                weapon: form.querySelector(`#extra-b-${card.id}`).value
-            });
-        } else if (card instanceof PaladinCard) {
-            card.update({
-                ...base,
-                defense: form.querySelector(`#extra-a-${card.id}`).value,
-                blessing: form.querySelector(`#extra-b-${card.id}`).value
-            });
-        } else {
-            card.update({
-                ...base,
-                souls: form.querySelector(`#extra-a-${card.id}`).value,
-                ritual: form.querySelector(`#extra-b-${card.id}`).value
-            });
+            appState.custom.unshift(card);
+            saveToStorage();
+            renderApp();
+        } catch (err) {
+            showMsg(msg, err.message, true);
         }
-
-        saveState();
-        buildPage();
-    } catch (error) {
-        showMessage(msg, error.message, true);
     }
-}
 
-function extraFields(card) {
-    if (card instanceof WarriorCard) {
+    function removeCard(id) {
+        if (!confirm("Удалить карту?")) return;
+        appState.custom = appState.custom.filter(c => c.id !== id);
+        saveToStorage();
+        renderApp();
+    }
+
+    function createEditForm(card) {
+        const box = document.createElement("div");
+        box.className = "edit-panel";
+        box.innerHTML = `<h4>Редактировать</h4>`;
+
+        const form = document.createElement("form");
+        form.append(
+            inputField(`edit_name_${card.id}`, "Название", card.name, true),
+            textareaField(`edit_desc_${card.id}`, "Описание", card.desc, true),
+            numberField(`edit_cost_${card.id}`, "Мана", 0, 20, card.cost, true),
+            inputField(`edit_grade_${card.id}`, "Редкость", card.grade, true),
+            textareaField(`edit_text_${card.id}`, "Эффект", card.text, true),
+            ...extraFields(card),
+            createButton("Сохранить", "btn primary", null, "submit"),
+            messageBlock(`msg_${card.id}`)
+        );
+
+        form.addEventListener("submit", (ev) => saveEdit(ev, card));
+        box.append(form);
+        return box;
+    }
+
+    function saveEdit(ev, card) {
+        ev.preventDefault();
+        const form = ev.currentTarget;
+        const msg = form.querySelector(".msg-block");
+        clearMsg(msg);
+
+        try {
+            const base = {
+                name: form.querySelector(`#edit_name_${card.id}`).value,
+                desc: form.querySelector(`#edit_desc_${card.id}`).value,
+                cost: form.querySelector(`#edit_cost_${card.id}`).value,
+                grade: form.querySelector(`#edit_grade_${card.id}`).value,
+                text: form.querySelector(`#edit_text_${card.id}`).value
+            };
+
+            if (card instanceof Berserker) {
+                card.applyChanges({
+                    ...base,
+                    attack: form.querySelector(`#extra_a_${card.id}`).value,
+                    weapon: form.querySelector(`#extra_b_${card.id}`).value
+                });
+            } else if (card instanceof Guardian) {
+                card.applyChanges({
+                    ...base,
+                    armor: form.querySelector(`#extra_a_${card.id}`).value,
+                    bless: form.querySelector(`#extra_b_${card.id}`).value
+                });
+            } else {
+                card.applyChanges({
+                    ...base,
+                    souls: form.querySelector(`#extra_a_${card.id}`).value,
+                    ritual: form.querySelector(`#extra_b_${card.id}`).value
+                });
+            }
+
+            saveToStorage();
+            renderApp();
+        } catch (err) {
+            showMsg(msg, err.message, true);
+        }
+    }
+
+    function extraFields(card) {
+        if (card instanceof Berserker) {
+            return [
+                numberField(`extra_a_${card.id}`, "Атака", 1, 99, card.attack, true),
+                inputField(`extra_b_${card.id}`, "Оружие", card.weapon, true)
+            ];
+        }
+        if (card instanceof Guardian) {
+            return [
+                numberField(`extra_a_${card.id}`, "Защита", 1, 99, card.armor, true),
+                inputField(`extra_b_${card.id}`, "Благословение", card.bless, true)
+            ];
+        }
         return [
-            numberField(`extra-a-${card.id}`, "Сила атаки", 1, 99, card.attack, true),
-            field(`extra-b-${card.id}`, "Оружие", card.weapon, true)
+            numberField(`extra_a_${card.id}`, "Души", 1, 99, card.souls, true),
+            inputField(`extra_b_${card.id}`, "Ритуал", card.ritual, true)
         ];
     }
 
-    if (card instanceof PaladinCard) {
-        return [
-            numberField(`extra-a-${card.id}`, "Защита", 1, 99, card.defense, true),
-            field(`extra-b-${card.id}`, "Благословение", card.blessing, true)
-        ];
+    function inputField(id, label, val = "", filled = false) {
+        const div = document.createElement("div");
+        div.className = "field";
+        div.innerHTML = `<label for="${id}">${label}</label><input type="text" id="${id}" name="${id}">`;
+        const inp = div.querySelector("input");
+        if (filled) inp.value = val;
+        else inp.placeholder = val;
+        return div;
     }
 
-    return [
-        numberField(`extra-a-${card.id}`, "Души", 1, 99, card.souls, true),
-        field(`extra-b-${card.id}`, "Ритуал", card.ritual, true)
-    ];
-}
+    function textareaField(id, label, val = "", filled = false) {
+        const div = document.createElement("div");
+        div.className = "field";
+        div.innerHTML = `<label for="${id}">${label}</label><textarea id="${id}" name="${id}"></textarea>`;
+        const ta = div.querySelector("textarea");
+        if (filled) ta.value = val;
+        else ta.placeholder = val;
+        return div;
+    }
 
-function field(id, labelText, value = "", filled = false) {
-    const div = document.createElement("div");
-    div.className = "form-group";
-    div.innerHTML = `<label for="${id}">${labelText}</label><input type="text" id="${id}" name="${id}">`;
-    const input = div.querySelector("input");
-    if (filled) input.value = value;
-    else input.placeholder = value;
-    return div;
-}
+    function numberField(id, label, min, max, val = "", filled = false) {
+        const div = document.createElement("div");
+        div.className = "field";
+        div.innerHTML = `<label for="${id}">${label}</label><input type="number" id="${id}" name="${id}" min="${min}" max="${max}">`;
+        const inp = div.querySelector("input");
+        if (filled) inp.value = val;
+        else inp.placeholder = val;
+        return div;
+    }
 
-function textareaField(id, labelText, value = "", filled = false) {
-    const div = document.createElement("div");
-    div.className = "form-group";
-    div.innerHTML = `<label for="${id}">${labelText}</label><textarea id="${id}" name="${id}"></textarea>`;
-    const textarea = div.querySelector("textarea");
-    if (filled) textarea.value = value;
-    else textarea.placeholder = value;
-    return div;
-}
+    function selectField(id, label, items) {
+        const div = document.createElement("div");
+        div.className = "field";
+        div.innerHTML = `<label for="${id}">${label}</label><select id="${id}" name="${id}"></select>`;
+        const sel = div.querySelector("select");
+        items.forEach(([val, txt]) => {
+            const opt = document.createElement("option");
+            opt.value = val;
+            opt.textContent = txt;
+            sel.append(opt);
+        });
+        return div;
+    }
 
-function numberField(id, labelText, min, max, value = "", filled = false) {
-    const div = document.createElement("div");
-    div.className = "form-group";
-    div.innerHTML = `<label for="${id}">${labelText}</label><input type="number" id="${id}" name="${id}" min="${min}" max="${max}">`;
-    const input = div.querySelector("input");
-    if (filled) input.value = value;
-    else input.placeholder = value;
-    return div;
-}
+    function createButton(text, cls, handler = null, type = "button") {
+        const btn = document.createElement("button");
+        btn.className = cls;
+        btn.type = type;
+        btn.textContent = text;
+        if (handler) btn.addEventListener("click", handler);
+        return btn;
+    }
 
-function selectField(id, labelText, items) {
-    const div = document.createElement("div");
-    div.className = "form-group";
-    div.innerHTML = `<label for="${id}">${labelText}</label><select id="${id}" name="${id}"></select>`;
-    const select = div.querySelector("select");
+    function messageBlock(id) {
+        const div = document.createElement("div");
+        div.id = id;
+        div.className = "msg-block";
+        return div;
+    }
 
-    items.forEach(item => {
-        const option = document.createElement("option");
-        option.value = item[0];
-        option.textContent = item[1];
-        select.append(option);
-    });
+    function showMsg(el, text, isErr = false) {
+        el.textContent = text;
+        el.className = `msg-block ${isErr ? "error" : "ok"}`;
+    }
 
-    return div;
-}
+    function clearMsg(el) {
+        el.textContent = "";
+        el.className = "msg-block";
+    }
 
-function button(text, className, handler = null, type = "button") {
-    const btn = document.createElement("button");
-    btn.className = className;
-    btn.type = type;
-    btn.textContent = text;
-    if (handler) btn.addEventListener("click", handler);
-    return btn;
-}
-
-function messageBlock(id) {
-    const div = document.createElement("div");
-    div.id = id;
-    div.className = "form-message";
-    return div;
-}
-
-function showMessage(el, text, error = false) {
-    el.textContent = text;
-    el.className = `form-message ${error ? "error" : "success"}`;
-}
-
-function clearMessage(el) {
-    el.textContent = "";
-    el.className = "form-message";
-}
+    loadFromStorage();
+    renderApp();
+})();
