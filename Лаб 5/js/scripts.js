@@ -2,60 +2,52 @@
     const STORAGE = "wow_collection";
 
     class Unit {
-        #id;
-        #name;
-        #desc;
-        #cost;
-        #grade;
-        #text;
-        #isBase;
-
         constructor(data, isBase = true) {
-            this.#id = data.id;
+            this._id = data.id;
             this.name = data.name;
             this.desc = data.desc;
             this.cost = data.cost;
             this.grade = data.grade;
             this.text = data.text;
-            this.#isBase = isBase;
+            this._isBase = isBase;
         }
 
-        get id() { return this.#id; }
-        get name() { return this.#name; }
-        get desc() { return this.#desc; }
-        get cost() { return this.#cost; }
-        get grade() { return this.#grade; }
-        get text() { return this.#text; }
-        get isBase() { return this.#isBase; }
+        get id() { return this._id; }
+        get name() { return this._name; }
+        get desc() { return this._desc; }
+        get cost() { return this._cost; }
+        get grade() { return this._grade; }
+        get text() { return this._text; }
+        get isBase() { return this._isBase; }
 
         set name(v) {
             v = String(v).trim();
             if (v.length < 2) throw new Error("Название слишком короткое");
-            this.#name = v;
+            this._name = v;
         }
 
         set desc(v) {
             v = String(v).trim();
             if (v.length < 5) throw new Error("Описание слишком короткое");
-            this.#desc = v;
+            this._desc = v;
         }
 
         set cost(v) {
             v = Number(v);
             if (!Number.isInteger(v) || v < 0 || v > 20) throw new Error("Стоимость от 0 до 20");
-            this.#cost = v;
+            this._cost = v;
         }
 
         set grade(v) {
             v = String(v).trim();
             if (!v) throw new Error("Укажите редкость");
-            this.#grade = v;
+            this._grade = v;
         }
 
         set text(v) {
             v = String(v).trim();
             if (v.length < 5) throw new Error("Эффект слишком короткий");
-            this.#text = v;
+            this._text = v;
         }
 
         getType() { return "Обычный юнит"; }
@@ -249,27 +241,27 @@
     function saveToStorage() {
         localStorage.setItem(STORAGE, JSON.stringify({
             editMode: appState.editMode,
-            base: appState.base.map(c => c.toJSON()),
-            custom: appState.custom.map(c => c.toJSON())
+            base: appState.base.map(function(c) { return c.toJSON(); }),
+            custom: appState.custom.map(function(c) { return c.toJSON(); })
         }));
     }
 
     function loadFromStorage() {
-        const raw = localStorage.getItem(STORAGE);
+        var raw = localStorage.getItem(STORAGE);
         if (!raw) {
-            appState.base = [...presetList];
+            appState.base = presetList.slice();
             appState.custom = [];
             saveToStorage();
             return;
         }
 
         try {
-            const data = JSON.parse(raw);
+            var data = JSON.parse(raw);
             appState.editMode = !!data.editMode;
-            appState.base = (data.base || []).map(restoreCard);
-            appState.custom = (data.custom || []).map(restoreCard);
-        } catch {
-            appState.base = [...presetList];
+            appState.base = (data.base || []).map(function(c) { return restoreCard(c); });
+            appState.custom = (data.custom || []).map(function(c) { return restoreCard(c); });
+        } catch(e) {
+            appState.base = presetList.slice();
             appState.custom = [];
         }
     }
@@ -286,139 +278,130 @@
 
     function renderApp() {
         document.body.innerHTML = "";
-        document.body.append(buildHeader(), buildMain());
+        document.body.appendChild(buildHeader());
+        document.body.appendChild(buildMain());
     }
 
     function buildHeader() {
-        const header = document.createElement("header");
+        var header = document.createElement("header");
         header.className = "top-bar";
-        header.innerHTML = `
-            <div class="top-inner">
-                <div>
-                    <h1>WoW Коллекция</h1>
-                    <p>Карточная коллекция по мотивам Hearthstone</p>
-                </div>
-                <div class="top-actions"></div>
-            </div>
-        `;
+        header.innerHTML = '<div class="top-inner"><div><h1>WoW Коллекция</h1><p>Карточная коллекция по мотивам Hearthstone</p></div><div class="top-actions"></div></div>';
 
-        const actions = header.querySelector(".top-actions");
-        const editBtn = createButton(
+        var actions = header.querySelector(".top-actions");
+        var editBtn = createButton(
             appState.editMode ? "Выкл. редакт" : "Вкл. редакт",
             appState.editMode ? "btn danger" : "btn primary",
-            () => {
+            function() {
                 appState.editMode = !appState.editMode;
                 saveToStorage();
                 renderApp();
             }
         );
-        const resetBtn = createButton("Сброс", "btn secondary", () => {
+        var resetBtn = createButton("Сброс", "btn secondary", function() {
             if (confirm("Сбросить всё?")) {
                 localStorage.removeItem(STORAGE);
-                appState = { editMode: false, base: [...presetList], custom: [] };
+                appState = { editMode: false, base: presetList.slice(), custom: [] };
                 saveToStorage();
                 renderApp();
             }
         });
 
-        actions.append(editBtn, resetBtn);
+        actions.appendChild(editBtn);
+        actions.appendChild(resetBtn);
         return header;
     }
 
     function buildMain() {
-        const main = document.createElement("main");
+        var main = document.createElement("main");
         main.className = "main-wrap";
-        main.append(buildHero(), buildContent());
+        main.appendChild(buildHero());
+        main.appendChild(buildContent());
         return main;
     }
 
     function buildHero() {
-        const sec = document.createElement("section");
+        var sec = document.createElement("section");
         sec.className = "hero";
-        sec.innerHTML = `
-            <h2>Добро пожаловать в Азерот</h2>
-            <p>Собирай, создавай, редактируй</p>
-            <div class="hero-grid">
-                <article><h3>Берсерк</h3><p>Атака + оружие</p></article>
-                <article><h3>Страж</h3><p>Защита + благословение</p></article>
-                <article><h3>Некромант</h3><p>Души + ритуал</p></article>
-            </div>
-        `;
+        sec.innerHTML = '<h2>Добро пожаловать в Азерот</h2><p>Собирай, создавай, редактируй</p><div class="hero-grid"><article><h3>Берсерк</h3><p>Атака + оружие</p></article><article><h3>Страж</h3><p>Защита + благословение</p></article><article><h3>Некромант</h3><p>Души + ритуал</p></article></div>';
         return sec;
     }
 
     function buildContent() {
-        const wrapper = document.createElement("div");
+        var wrapper = document.createElement("div");
         wrapper.className = "content-layout";
-        wrapper.append(buildForm(), buildDeck());
+        wrapper.appendChild(buildForm());
+        wrapper.appendChild(buildDeck());
         return wrapper;
     }
 
     function buildForm() {
-        const aside = document.createElement("aside");
+        var aside = document.createElement("aside");
         aside.className = "form-panel";
-        aside.innerHTML = `<h2>Добавить карту</h2>`;
+        aside.innerHTML = '<h2>Добавить карту</h2>';
 
-        const form = document.createElement("form");
+        var form = document.createElement("form");
         form.id = "addForm";
-        form.append(
-            inputField("new_name", "Название"),
-            textareaField("new_desc", "Описание"),
-            numberField("new_cost", "Мана", 0, 20),
-            inputField("new_grade", "Редкость"),
-            textareaField("new_text", "Эффект"),
-            selectField("new_class", "Класс", [
-                ["Berserker", "Берсерк"],
-                ["Guardian", "Страж"],
-                ["DarkMage", "Некромант"]
-            ]),
-            numberField("new_a", "Атака / Защита / Души", 1, 99),
-            inputField("new_b", "Оружие / Благословение / Ритуал"),
-            createButton("Создать", "btn success", null, "submit"),
-            messageBlock("formMsg")
-        );
+        form.appendChild(inputField("new_name", "Название"));
+        form.appendChild(textareaField("new_desc", "Описание"));
+        form.appendChild(numberField("new_cost", "Мана", 0, 20));
+        form.appendChild(inputField("new_grade", "Редкость"));
+        form.appendChild(textareaField("new_text", "Эффект"));
+        form.appendChild(selectField("new_class", "Класс", [
+            ["Berserker", "Берсерк"],
+            ["Guardian", "Страж"],
+            ["DarkMage", "Некромант"]
+        ]));
+        form.appendChild(numberField("new_a", "Атака / Защита / Души", 1, 99));
+        form.appendChild(inputField("new_b", "Оружие / Благословение / Ритуал"));
+        form.appendChild(createButton("Создать", "btn success", null, "submit"));
+        form.appendChild(messageBlock("formMsg"));
 
         form.addEventListener("submit", addCard);
-        aside.append(form);
+        aside.appendChild(form);
         return aside;
     }
 
     function buildDeck() {
-        const area = document.createElement("div");
+        var area = document.createElement("div");
         area.className = "deck-area";
 
-        const baseSec = document.createElement("section");
+        var baseSec = document.createElement("section");
         baseSec.className = "block";
-        baseSec.innerHTML = `<h2>Легендарные герои</h2><p>Предустановленные карты</p><div class="card-grid"></div>`;
-        const baseGrid = baseSec.querySelector(".card-grid");
-        appState.base.forEach(c => baseGrid.append(c.render(appState.editMode)));
+        baseSec.innerHTML = '<h2>Легендарные герои</h2><p>Предустановленные карты</p><div class="card-grid"></div>';
+        var baseGrid = baseSec.querySelector(".card-grid");
+        for (var i = 0; i < appState.base.length; i++) {
+            baseGrid.appendChild(appState.base[i].render(appState.editMode));
+        }
 
-        const customSec = document.createElement("section");
+        var customSec = document.createElement("section");
         customSec.className = "block";
-        customSec.innerHTML = `<h2>Мои карты</h2><p>Созданные тобой</p><div class="card-grid"></div>`;
-        const customGrid = customSec.querySelector(".card-grid");
+        customSec.innerHTML = '<h2>Мои карты</h2><p>Созданные тобой</p><div class="card-grid"></div>';
+        var customGrid = customSec.querySelector(".card-grid");
 
         if (appState.custom.length === 0) {
             customGrid.innerHTML = '<p class="empty">Пока пусто. Создай первую карту!</p>';
         } else {
-            appState.custom.forEach(c => customGrid.append(c.render(false)));
+            for (var j = 0; j < appState.custom.length; j++) {
+                customGrid.appendChild(appState.custom[j].render(false));
+            }
         }
 
-        area.append(baseSec, customSec);
+        area.appendChild(baseSec);
+        area.appendChild(customSec);
         return area;
     }
 
     function addCard(e) {
         e.preventDefault();
-        const form = e.currentTarget;
-        const msg = document.getElementById("formMsg");
+        var form = e.currentTarget;
+        var msg = document.getElementById("formMsg");
         clearMsg(msg);
 
         try {
-            const type = form.querySelector("#new_class").value;
-            const id = "user_" + Date.now();
-            const data = {
-                id,
+            var type = form.querySelector("#new_class").value;
+            var id = "user_" + Date.now();
+            var data = {
+                id: id,
                 name: form.querySelector("#new_name").value,
                 desc: form.querySelector("#new_desc").value,
                 cost: form.querySelector("#new_cost").value,
@@ -428,7 +411,7 @@
                 b: form.querySelector("#new_b").value
             };
 
-            let card;
+            var card;
             if (type === "Berserker") {
                 card = new Berserker({ id: data.id, name: data.name, desc: data.desc, cost: data.cost, grade: data.grade, text: data.text, attack: data.a, weapon: data.b }, false);
             } else if (type === "Guardian") {
@@ -447,65 +430,86 @@
 
     function removeCard(id) {
         if (!confirm("Удалить карту?")) return;
-        appState.custom = appState.custom.filter(c => c.id !== id);
+        var newCustom = [];
+        for (var i = 0; i < appState.custom.length; i++) {
+            if (appState.custom[i].id !== id) {
+                newCustom.push(appState.custom[i]);
+            }
+        }
+        appState.custom = newCustom;
         saveToStorage();
         renderApp();
     }
 
     function createEditForm(card) {
-        const box = document.createElement("div");
+        var box = document.createElement("div");
         box.className = "edit-panel";
-        box.innerHTML = `<h4>Редактировать</h4>`;
+        box.innerHTML = '<h4>Редактировать</h4>';
 
-        const form = document.createElement("form");
-        form.append(
-            inputField(`edit_name_${card.id}`, "Название", card.name, true),
-            textareaField(`edit_desc_${card.id}`, "Описание", card.desc, true),
-            numberField(`edit_cost_${card.id}`, "Мана", 0, 20, card.cost, true),
-            inputField(`edit_grade_${card.id}`, "Редкость", card.grade, true),
-            textareaField(`edit_text_${card.id}`, "Эффект", card.text, true),
-            ...extraFields(card),
-            createButton("Сохранить", "btn primary", null, "submit"),
-            messageBlock(`msg_${card.id}`)
-        );
+        var form = document.createElement("form");
+        form.appendChild(inputField("edit_name_" + card.id, "Название", card.name, true));
+        form.appendChild(textareaField("edit_desc_" + card.id, "Описание", card.desc, true));
+        form.appendChild(numberField("edit_cost_" + card.id, "Мана", 0, 20, card.cost, true));
+        form.appendChild(inputField("edit_grade_" + card.id, "Редкость", card.grade, true));
+        form.appendChild(textareaField("edit_text_" + card.id, "Эффект", card.text, true));
+        
+        var extra = extraFields(card);
+        for (var i = 0; i < extra.length; i++) {
+            form.appendChild(extra[i]);
+        }
+        
+        form.appendChild(createButton("Сохранить", "btn primary", null, "submit"));
+        form.appendChild(messageBlock("msg_" + card.id));
 
-        form.addEventListener("submit", (ev) => saveEdit(ev, card));
-        box.append(form);
+        form.addEventListener("submit", function(ev) { saveEdit(ev, card); });
+        box.appendChild(form);
         return box;
     }
 
     function saveEdit(ev, card) {
         ev.preventDefault();
-        const form = ev.currentTarget;
-        const msg = form.querySelector(".msg-block");
+        var form = ev.currentTarget;
+        var msg = form.querySelector(".msg-block");
         clearMsg(msg);
 
         try {
-            const base = {
-                name: form.querySelector(`#edit_name_${card.id}`).value,
-                desc: form.querySelector(`#edit_desc_${card.id}`).value,
-                cost: form.querySelector(`#edit_cost_${card.id}`).value,
-                grade: form.querySelector(`#edit_grade_${card.id}`).value,
-                text: form.querySelector(`#edit_text_${card.id}`).value
+            var base = {
+                name: form.querySelector("#edit_name_" + card.id).value,
+                desc: form.querySelector("#edit_desc_" + card.id).value,
+                cost: form.querySelector("#edit_cost_" + card.id).value,
+                grade: form.querySelector("#edit_grade_" + card.id).value,
+                text: form.querySelector("#edit_text_" + card.id).value
             };
 
             if (card instanceof Berserker) {
                 card.applyChanges({
-                    ...base,
-                    attack: form.querySelector(`#extra_a_${card.id}`).value,
-                    weapon: form.querySelector(`#extra_b_${card.id}`).value
+                    name: base.name,
+                    desc: base.desc,
+                    cost: base.cost,
+                    grade: base.grade,
+                    text: base.text,
+                    attack: form.querySelector("#extra_a_" + card.id).value,
+                    weapon: form.querySelector("#extra_b_" + card.id).value
                 });
             } else if (card instanceof Guardian) {
                 card.applyChanges({
-                    ...base,
-                    armor: form.querySelector(`#extra_a_${card.id}`).value,
-                    bless: form.querySelector(`#extra_b_${card.id}`).value
+                    name: base.name,
+                    desc: base.desc,
+                    cost: base.cost,
+                    grade: base.grade,
+                    text: base.text,
+                    armor: form.querySelector("#extra_a_" + card.id).value,
+                    bless: form.querySelector("#extra_b_" + card.id).value
                 });
             } else {
                 card.applyChanges({
-                    ...base,
-                    souls: form.querySelector(`#extra_a_${card.id}`).value,
-                    ritual: form.querySelector(`#extra_b_${card.id}`).value
+                    name: base.name,
+                    desc: base.desc,
+                    cost: base.cost,
+                    grade: base.grade,
+                    text: base.text,
+                    souls: form.querySelector("#extra_a_" + card.id).value,
+                    ritual: form.querySelector("#extra_b_" + card.id).value
                 });
             }
 
@@ -519,85 +523,96 @@
     function extraFields(card) {
         if (card instanceof Berserker) {
             return [
-                numberField(`extra_a_${card.id}`, "Атака", 1, 99, card.attack, true),
-                inputField(`extra_b_${card.id}`, "Оружие", card.weapon, true)
+                numberField("extra_a_" + card.id, "Атака", 1, 99, card.attack, true),
+                inputField("extra_b_" + card.id, "Оружие", card.weapon, true)
             ];
         }
         if (card instanceof Guardian) {
             return [
-                numberField(`extra_a_${card.id}`, "Защита", 1, 99, card.armor, true),
-                inputField(`extra_b_${card.id}`, "Благословение", card.bless, true)
+                numberField("extra_a_" + card.id, "Защита", 1, 99, card.armor, true),
+                inputField("extra_b_" + card.id, "Благословение", card.bless, true)
             ];
         }
         return [
-            numberField(`extra_a_${card.id}`, "Души", 1, 99, card.souls, true),
-            inputField(`extra_b_${card.id}`, "Ритуал", card.ritual, true)
+            numberField("extra_a_" + card.id, "Души", 1, 99, card.souls, true),
+            inputField("extra_b_" + card.id, "Ритуал", card.ritual, true)
         ];
     }
 
-    function inputField(id, label, val = "", filled = false) {
-        const div = document.createElement("div");
+    function inputField(id, label, val, filled) {
+        var div = document.createElement("div");
         div.className = "field";
-        div.innerHTML = `<label for="${id}">${label}</label><input type="text" id="${id}" name="${id}">`;
-        const inp = div.querySelector("input");
-        if (filled) inp.value = val;
-        else inp.placeholder = val;
+        div.innerHTML = '<label for="' + id + '">' + label + '</label><input type="text" id="' + id + '" name="' + id + '">';
+        var inp = div.querySelector("input");
+        if (filled) {
+            inp.value = val;
+        } else {
+            inp.placeholder = val || "";
+        }
         return div;
     }
 
-    function textareaField(id, label, val = "", filled = false) {
-        const div = document.createElement("div");
+    function textareaField(id, label, val, filled) {
+        var div = document.createElement("div");
         div.className = "field";
-        div.innerHTML = `<label for="${id}">${label}</label><textarea id="${id}" name="${id}"></textarea>`;
-        const ta = div.querySelector("textarea");
-        if (filled) ta.value = val;
-        else ta.placeholder = val;
+        div.innerHTML = '<label for="' + id + '">' + label + '</label><textarea id="' + id + '" name="' + id + '"></textarea>';
+        var ta = div.querySelector("textarea");
+        if (filled) {
+            ta.value = val;
+        } else {
+            ta.placeholder = val || "";
+        }
         return div;
     }
 
-    function numberField(id, label, min, max, val = "", filled = false) {
-        const div = document.createElement("div");
+    function numberField(id, label, min, max, val, filled) {
+        var div = document.createElement("div");
         div.className = "field";
-        div.innerHTML = `<label for="${id}">${label}</label><input type="number" id="${id}" name="${id}" min="${min}" max="${max}">`;
-        const inp = div.querySelector("input");
-        if (filled) inp.value = val;
-        else inp.placeholder = val;
+        div.innerHTML = '<label for="' + id + '">' + label + '</label><input type="number" id="' + id + '" name="' + id + '" min="' + min + '" max="' + max + '">';
+        var inp = div.querySelector("input");
+        if (filled) {
+            inp.value = val;
+        } else {
+            inp.placeholder = val || "";
+        }
         return div;
     }
 
     function selectField(id, label, items) {
-        const div = document.createElement("div");
+        var div = document.createElement("div");
         div.className = "field";
-        div.innerHTML = `<label for="${id}">${label}</label><select id="${id}" name="${id}"></select>`;
-        const sel = div.querySelector("select");
-        items.forEach(([val, txt]) => {
-            const opt = document.createElement("option");
-            opt.value = val;
-            opt.textContent = txt;
-            sel.append(opt);
-        });
+        div.innerHTML = '<label for="' + id + '">' + label + '</label><select id="' + id + '" name="' + id + '"></select>';
+        var sel = div.querySelector("select");
+        for (var i = 0; i < items.length; i++) {
+            var opt = document.createElement("option");
+            opt.value = items[i][0];
+            opt.textContent = items[i][1];
+            sel.appendChild(opt);
+        }
         return div;
     }
 
-    function createButton(text, cls, handler = null, type = "button") {
-        const btn = document.createElement("button");
+    function createButton(text, cls, handler, type) {
+        var btn = document.createElement("button");
         btn.className = cls;
-        btn.type = type;
+        btn.type = type || "button";
         btn.textContent = text;
-        if (handler) btn.addEventListener("click", handler);
+        if (handler) {
+            btn.addEventListener("click", handler);
+        }
         return btn;
     }
 
     function messageBlock(id) {
-        const div = document.createElement("div");
+        var div = document.createElement("div");
         div.id = id;
         div.className = "msg-block";
         return div;
     }
 
-    function showMsg(el, text, isErr = false) {
+    function showMsg(el, text, isErr) {
         el.textContent = text;
-        el.className = `msg-block ${isErr ? "error" : "ok"}`;
+        el.className = "msg-block " + (isErr ? "error" : "ok");
     }
 
     function clearMsg(el) {
